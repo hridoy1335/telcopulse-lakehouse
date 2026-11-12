@@ -1,0 +1,335 @@
+
+name: TelcoPulse - Databricks CI/CD
+
+run-name: >-
+  TelcoPulse promotion to ${{ inputs.deploy_through || 'dev' }}
+  by ${{ github.actor }}
+
+on:
+
+  # Pull requests: validation only
+  pull_request:
+    branches:
+      - main
+
+  # Push to main: automatic DEV deployment
+  push:
+    branches:
+      - main
+
+  # Manual promotion through environments
+  workflow_dispatch:
+    inputs:
+      deploy_through:
+        description: Highest environment to deploy
+        required: true
+        type: choice
+        options:
+          - dev
+          - qa
+          - prod
+        default: dev
+
+
+# Minimum permissions by default
+permissions:
+  contents: read
+
+
+# Prevent overlapping deployment runs
+concurrency:
+  group: telcopulse-deployment-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+
+jobs:
+
+  # ==========================================
+  # 1. CI - VALIDATION
+  # ==========================================
+
+  validate:
+
+    name: Validate Source Code
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 15
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Verify DAB bundle configuration
+        run: |
+          if [ ! -f databricks.yml ]; then
+            echo "ERROR: databricks.yml not found at repository root."
+            exit 1
+          fi
+
+      - name: Compile Python source
+        shell: bash
+        run: |
+          for directory in ingestion databricks/src; do
+            if [ -d "$directory" ]; then
+              python -m compileall -q "$directory"
+            fi
+          done
+
+      - name: Run unit tests
+        shell: bash
+        run: |
+          if [ -d tests ] && \
+             find tests -type f -name "test_*.py" -print -quit | grep -q .; then
+            python -m pip install pytest
+            python -m pytest -q tests
+          else
+            echo "No unit tests found. Skipping pytest."
+          fi
+
+
+  # ==========================================
+  # 2. DEV DEPLOYMENT
+  # ==========================================
+
+  deploy_dev:
+
+    name: Deploy DAB to DEV
+
+    needs: validate
+
+    if: >-
+      ${{
+        github.ref == 'refs/heads/main' &&
+        (
+          github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch'
+        )
+      }}
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
+    environment: dev
+
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      # Azure authentication
+      - name: Azure Login using OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify Azure identity and DEV access
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ACTUAL_SUBSCRIPTION=$(az account show --query id -o tsv)
+
+          if [[ "$ACTUAL_SUBSCRIPTION" != "$AZURE_SUBSCRIPTION_ID" ]]; then
+            echo "Azure subscription mismatch."
+            exit 1
+          fi
+
+          az group show \
+            --name spoke-telcopulse-dev \
+            --query '{name:name, location:location}' \
+            -o table
+
+      # Databricks authentication
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@v1.20.0
+
+      - name: Verify Databricks identity
+        run: databricks current-user me
+
+      - name: Validate DEV bundle
+        run: databricks bundle validate --target dev
+
+      - name: Deploy DEV bundle
+        run: databricks bundle deploy --target dev
+
+
+  # ==========================================
+  # 3. QA DEPLOYMENT
+  # ==========================================
+
+  deploy_qa:
+
+    name: Deploy DAB to QA
+
+    needs:
+      - validate
+      - deploy_dev
+
+    if: >-
+      ${{
+        github.ref == 'refs/heads/main' &&
+        github.event_name == 'workflow_dispatch' &&
+        (
+          inputs.deploy_through == 'qa' ||
+          inputs.deploy_through == 'prod'
+        )
+      }}
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
+    environment: qa
+
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Azure Login using OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify Azure identity and QA access
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ACTUAL_SUBSCRIPTION=$(az account show --query id -o tsv)
+
+          if [[ "$ACTUAL_SUBSCRIPTION" != "$AZURE_SUBSCRIPTION_ID" ]]; then
+            echo "Azure subscription mismatch."
+            exit 1
+          fi
+
+          az group show \
+            --name spoke-telcopulse-qa \
+            --query '{name:name, location:location}' \
+            -o table
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@v1.20.0
+
+      - name: Verify Databricks identity
+        run: databricks current-user me
+
+      - name: Validate QA bundle
+        run: databricks bundle validate --target qa
+
+      - name: Deploy QA bundle
+        run: databricks bundle deploy --target qa
+
+
+  # ==========================================
+  # 4. PROD DEPLOYMENT
+  # ==========================================
+
+  deploy_prod:
+
+    name: Deploy DAB to PROD
+
+    needs:
+      - validate
+      - deploy_qa
+
+    if: >-
+      ${{
+        github.ref == 'refs/heads/main' &&
+        github.event_name == 'workflow_dispatch' &&
+        inputs.deploy_through == 'prod'
+      }}
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
+    # GitHub environment approval gate
+    environment: prod
+
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Azure Login using OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify Azure identity and PROD access
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ACTUAL_SUBSCRIPTION=$(az account show --query id -o tsv)
+
+          if [[ "$ACTUAL_SUBSCRIPTION" != "$AZURE_SUBSCRIPTION_ID" ]]; then
+            echo "Azure subscription mismatch."
+            exit 1
+          fi
+
+          az group show \
+            --name spoke-telcopulse-prod \
+            --query '{name:name, location:location}' \
+            -o table
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@v1.20.0
+
+      - name: Verify Databricks identity
+        run: databricks current-user me
+
+      - name: Validate PROD bundle
+        run: databricks bundle validate --target prod
+
+      - name: Deploy PROD bundle
+        run: databricks bundle deploy --target prod

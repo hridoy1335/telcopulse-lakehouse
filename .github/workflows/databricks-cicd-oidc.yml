@@ -8,14 +8,14 @@ run-name: >-
 on:
 
   # Pull requests: validation only
-  pull_request:
-    branches:
-      - main
+  # pull_request:
+  #   branches:
+  #     - main
 
   # Push to main: automatic DEV deployment
-  push:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
 
   # Manual promotion through environments
   workflow_dispatch:

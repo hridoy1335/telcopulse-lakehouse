@@ -48,9 +48,9 @@ jobs:
         shell: bash
         run: |
           case "$TARGET_ENV" in
-            dev) RG="spoke_dev" ;;
-            qa) RG="spoke_qa" ;;
-            prod) RG="spoke_prod" ;;
+            dev) RG="spoke-telcopulse-dev" ;;
+            qa) RG="spoke-telcopulse-qa" ;;
+            prod) RG="spoke-telcopulse-prod" ;;
             *) echo "Invalid environment"; exit 1 ;;
           esac
 

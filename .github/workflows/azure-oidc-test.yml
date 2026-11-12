@@ -1,0 +1,60 @@
+
+name: TelcoPulse Azure OIDC Validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: Select Azure environment
+        required: true
+        type: choice
+        options:
+          - dev
+          - qa
+          - prod
+
+permissions:
+  contents: read
+
+jobs:
+  azure-oidc:
+    name: Authenticate to Azure
+
+    runs-on: ubuntu-latest
+
+    environment: ${{ inputs.target_environment }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Azure Login using OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify Azure identity
+        run: |
+          az account show \
+            --query '{subscription:name, tenant:tenantId, user:user.name}' \
+            -o table
+
+      - name: Verify environment resource group
+        env:
+          TARGET_ENV: ${{ inputs.target_environment }}
+        shell: bash
+        run: |
+          case "$TARGET_ENV" in
+            dev) RG="spoke_dev" ;;
+            qa) RG="spoke_qa" ;;
+            prod) RG="spoke_prod" ;;
+            *) echo "Invalid environment"; exit 1 ;;
+          esac
+
+          az group show \
+            --name "$RG" \
+            --query '{name:name, location:location}' \
+            -o table

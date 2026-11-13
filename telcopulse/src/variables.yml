@@ -34,7 +34,11 @@ variables:
 
   pg_schema:
     description: Postgres source schema whose tables are copied to bronze
-    default: public
+    default: telcopulse
+
+  pg_connection_string_key:
+    description: Secret key in secret_scope holding the Postgres libpq URI (postgresql://user:pass@host:port/db?sslmode=...)
+    default: pg-connection-string
 
   eh_namespace:
     description: Event Hubs namespace name (Kafka endpoint <namespace>.servicebus.windows.net:9093)

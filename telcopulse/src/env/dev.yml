@@ -1,0 +1,68 @@
+# =============================================================================
+# TelcoPulse - DEV target
+#
+# Deployed from GitHub Actions (environment: dev) using these GitHub variables:
+#   DATABRICKS_HOST       -> workspace URL (read by the CLI from the environment;
+#                            workspace.host does not support ${var.*} interpolation)
+#   DATABRICKS_CLIENT_ID  -> SP application ID; map it in the workflow as
+#                            BUNDLE_VAR_env_sp_application_id
+#   AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID
+#                         -> Azure OIDC login (workflow auth only, not bundle config)
+# =============================================================================
+targets:
+  dev:
+    default: true
+    # No 'mode: development': it forces a dev_<user>_ prefix on UC schemas.
+    # Dev behaviours are set explicitly via presets below so schemas keep
+    # their real names (bronze / silver / gold).
+
+    workspace:
+      root_path: /Users/dataengineer@sheikhshishir6525gmail.onmicrosoft.com/.bundle/${bundle.name}/${bundle.target}
+      # Replaces deprecated presets.source_linked_deployment: false
+      sync_mode: overwrite
+
+    presets:
+      pipelines_development: true
+      trigger_pause_status: PAUSED
+      jobs_max_concurrent_runs: 1
+      tags:
+        project: telcopulse
+        environment: dev
+        creator: ${workspace.current_user.short_name}
+        managed_by: databricks_bundle
+
+    run_as:
+      service_principal_name: ${var.env_sp_application_id}
+
+    variables:
+      catalog_name: telcopulse-dev
+      bronze_schema: bronze
+      silver_schema: silver
+      gold_schema: gold
+
+      data_sample_pct: 10
+
+      # Cluster configuration
+      node_type_id: Standard_D4ds_v5
+      min_workers: 1
+      max_workers: 2
+
+      # Resolved at deploy time from the SP name (no hardcoded ID).
+      # In CI, BUNDLE_VAR_env_sp_application_id (from GitHub var
+      # DATABRICKS_CLIENT_ID) overrides this lookup.
+      env_sp_application_id:
+        lookup:
+          service_principal: app-telcopulse-github-dev
+
+    # Dev catalog/schemas already exist (external locations on ADLS telcopulsedev:
+    # abfss://{bronze,silver,gold}@telcopulsedev.dfs.core.windows.net/) and are
+    # not managed by the bundle - see the include note in databricks.yml.
+
+    permissions:
+      - user_name: dataengineer@sheikhshishir6525gmail.onmicrosoft.com
+        level: CAN_MANAGE
+      - group_name: de_group
+        level: CAN_MANAGE
+      - service_principal_name: ${var.env_sp_application_id}
+        level: CAN_MANAGE
+      

@@ -1,0 +1,21 @@
+resources:
+
+  schemas:
+
+    bronze:
+      name: ${var.bronze_schema}
+      catalog_name: ${resources.catalogs.telcopulse_catalog.name}
+
+      comment: "Bronze layer - Raw data"
+
+    silver:
+      name: ${var.silver_schema}
+      catalog_name: ${resources.catalogs.telcopulse_catalog.name}
+
+      comment: "Silver layer - Cleansed data"
+
+    gold:
+      name: ${var.gold_schema}
+      catalog_name: ${resources.catalogs.telcopulse_catalog.name}
+
+      comment: "Gold layer - Business ready data"

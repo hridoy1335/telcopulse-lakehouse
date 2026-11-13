@@ -1,0 +1,40 @@
+# =============================================================================
+# TelcoPulse - pipeline orchestration jobs
+# Pipeline definitions live in resource/pipeline/; this file only schedules them.
+# Dev target pauses schedules via presets.trigger_pause_status: PAUSED.
+# =============================================================================
+resources:
+  jobs:
+
+    # End-to-end orchestration:
+    #   1. postgres_bronze     : Postgres -> Bronze (JDBC batch, dimension tables)
+    #   2. eventhub_medallion  : Event Hub -> Bronze / Silver / Gold (streaming,
+    #                            silver joins events with the Postgres bronze dims)
+    # Task 2 runs only after task 1 succeeds, so silver always sees fresh dims.
+    telcopulse_medallion_orchestration:
+      name: telcopulse-medallion-orchestration-${bundle.target}
+
+      # Failure alerts (recipient set per target via var.alert_email)
+      email_notifications:
+        on_failure:
+          - ${var.alert_email}
+      notification_settings:
+        no_alert_for_skipped_runs: true
+        no_alert_for_canceled_runs: true
+
+      tasks:
+        - task_key: postgres_bronze
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.telcopulse_postgres_bronze.id}
+            full_refresh: false
+
+        - task_key: eventhub_medallion
+          depends_on:
+            - task_key: postgres_bronze
+          run_if: ALL_SUCCESS
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.telcopulse_eventhub_medallion.id}
+            full_refresh: false
+      schedule:
+        quartz_cron_expression: "0 0 11 * * ?"   # daily 11:00
+        timezone_id: UTC

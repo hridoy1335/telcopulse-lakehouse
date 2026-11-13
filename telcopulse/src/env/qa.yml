@@ -36,6 +36,10 @@ targets:
 
       data_sample_pct: 30
 
+      # Key Vault-backed secret scope in the QA workspace (pg-* / eh-* secrets).
+      # Must exist in the QA workspace with READ granted to the QA SP.
+      secret_scope: telcopulse-qa-kv
+
       # Cluster configuration
       node_type_id: Standard_D8ds_v5
       min_workers: 2
@@ -48,4 +52,11 @@ targets:
         lookup:
           service_principal: app-telcopulse-github-qa
 
-    # Permissions block goes here (recommended: de_group CAN_RUN, SP CAN_MANAGE)
+    # QA: engineers can view and trigger runs but not edit; only the deploying
+    # SP manages resources (changes reach QA through CI only).
+    # Top-level CAN_RUN maps to CAN_MANAGE_RUN on jobs and CAN_RUN on pipelines.
+    permissions:
+      - group_name: de_group
+        level: CAN_RUN
+      - service_principal_name: ${var.env_sp_application_id}
+        level: CAN_MANAGE

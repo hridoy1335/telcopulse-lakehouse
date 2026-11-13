@@ -37,6 +37,10 @@ targets:
 
       data_sample_pct: 100
 
+      # Key Vault-backed secret scope in the PROD workspace (pg-* / eh-* secrets).
+      # Must exist in the PROD workspace with READ granted to the PROD SP.
+      secret_scope: telcopulse-prod-kv
+
       # Cluster configuration
       node_type_id: Standard_D8ds_v5
       min_workers: 2

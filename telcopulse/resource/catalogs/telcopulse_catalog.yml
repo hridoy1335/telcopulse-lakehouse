@@ -1,0 +1,8 @@
+resources:
+
+  catalogs:
+
+    telcopulse_catalog:
+      name: ${var.catalog_name}
+
+      comment: "TelcoPulse ${bundle.target} Unity Catalog"

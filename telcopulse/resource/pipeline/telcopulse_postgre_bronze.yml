@@ -1,8 +1,9 @@
 # =============================================================================
 # Pipeline 1 - Postgres -> Bronze (batch, JDBC)
-# Copies every table in ${var.pg_schema} to <catalog>.bronze as pg_<table>.
-# Credentials are read at runtime from the Key Vault-backed secret scope
-# (pg-host, pg-port, pg-database, pg-username, pg-password, pg-sslmode).
+# Copies every table in ${var.pg_schema} to <catalog>.<bronze_schema> (same table names).
+# Credentials are read at runtime from the Key Vault-backed secret scope as a
+# libpq URI stored under ${var.pg_connection_string_key}.
+# data_sample_pct controls the deterministic PK-based sample (dev=10, qa=30, prod=100).
 # =============================================================================
 resources:
   pipelines:
@@ -24,7 +25,9 @@ resources:
 
       configuration:
         secret_scope: ${var.secret_scope}
+        pg_connection_string_key: ${var.pg_connection_string_key}
         pg_schema: ${var.pg_schema}
         bronze_schema: ${var.bronze_schema}
+        data_sample_pct: "${var.data_sample_pct}"
 
 # Schedule: see resource/job/telcopulse_job.yml (telcopulse_medallion_orchestration, task postgres_bronze)

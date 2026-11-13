@@ -4,5 +4,10 @@ bundle:
 # Variable declarations live in src/variables.yml; per-target values in src/env/*.yml
 include:
   - src/variables.yml
-  - resource/**/*.yml
+  # Catalog/schemas already exist in UC and are not bound to the bundle, so
+  # resource/catalogs and resource/schemas are intentionally NOT included
+  # (including them fails deploy with CATALOG_ALREADY_EXISTS).
+  # Re-add them only after `databricks bundle deployment bind`.
+  - resource/job/*.yml
+  - resource/pipeline/*.yml
   - src/env/*.yml

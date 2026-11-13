@@ -36,5 +36,5 @@ resources:
             pipeline_id: ${resources.pipelines.telcopulse_eventhub_medallion.id}
             full_refresh: false
       schedule:
-        quartz_cron_expression: "0 0 11 * * ?"   # daily 11:00
-        timezone_id: UTC
+        quartz_cron_expression: "0 0 4 * * ?"    # daily 04:00 Dhaka time (22:00 UTC)
+        timezone_id: Asia/Dhaka

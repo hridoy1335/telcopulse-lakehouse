@@ -1,0 +1,54 @@
+variables:
+
+  catalog_name:
+    description: Environment catalog name
+
+  bronze_schema:
+    description: Bronze schema name
+
+  silver_schema:
+    description: Silver schema name
+
+  gold_schema:
+    description: Gold schema name
+
+  data_sample_pct:
+    description: Data processing percentage
+
+  node_type_id:
+    description: Environment cluster node type
+
+  min_workers:
+    description: Minimum cluster workers
+
+  max_workers:
+    description: Maximum cluster workers
+
+  env_sp_application_id:
+    description: Environment service principal application ID (from GitHub var DATABRICKS_CLIENT_ID)
+
+  # --- Source connectivity (secrets live in the Key Vault-backed scope) ---
+  secret_scope:
+    description: Azure Key Vault-backed secret scope holding pg-* and eh-* secrets
+    default: telcopulse-dev-kv
+
+  pg_schema:
+    description: Postgres source schema whose tables are copied to bronze
+    default: public
+
+  eh_namespace:
+    description: Event Hubs namespace name (Kafka endpoint <namespace>.servicebus.windows.net:9093)
+    default: CHANGE_ME
+
+  eh_name:
+    description: Event Hub (Kafka topic) name
+    default: CHANGE_ME
+
+  eh_connection_string_key:
+    description: Secret key in secret_scope holding the Event Hubs connection string
+    default: eh-connection-string
+
+  # --- Alerting ---
+  alert_email:
+    description: Email (user or distribution list) notified when orchestration jobs fail
+    default: dataengineer@sheikhshishir6525gmail.onmicrosoft.com

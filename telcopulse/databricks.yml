@@ -1,0 +1,8 @@
+bundle:
+  name: telcopulse_data_platform
+
+# Variable declarations live in src/variables.yml; per-target values in src/env/*.yml
+include:
+  - src/variables.yml
+  - resource/**/*.yml
+  - src/env/*.yml

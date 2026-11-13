@@ -1,0 +1,38 @@
+# =============================================================================
+# Pipeline 2 - Event Hub -> Bronze / Silver / Gold (streaming, triggered)
+# Bronze : raw Event Hub stream via the Kafka endpoint (connection string from
+#          secret ${var.eh_connection_string_key} in ${var.secret_scope})
+# Silver : bronze event stream joined (stream-static) with the Postgres bronze
+#          dimension tables produced by telcopulse_postgres_bronze
+# Gold   : streaming business aggregates over silver
+# Pipeline default schema is bronze; silver/gold are written fully qualified.
+# =============================================================================
+resources:
+  pipelines:
+    telcopulse_eventhub_medallion:
+      name: telcopulse-eventhub-medallion-${bundle.target}
+
+      catalog: ${var.catalog_name}
+      schema: ${var.bronze_schema}
+
+      root_path: ../../src/pipelines/eventhub_medallion
+      libraries:
+        - glob:
+            include: ../../src/pipelines/eventhub_medallion/transformations/**
+
+      serverless: true
+      photon: true
+      channel: current
+      continuous: false
+
+      configuration:
+        secret_scope: ${var.secret_scope}
+        eh_namespace: ${var.eh_namespace}
+        eh_name: ${var.eh_name}
+        eh_connection_string_key: ${var.eh_connection_string_key}
+        catalog_name: ${var.catalog_name}
+        bronze_schema: ${var.bronze_schema}
+        silver_schema: ${var.silver_schema}
+        gold_schema: ${var.gold_schema}
+
+# Schedule: see resource/job/telcopulse_job.yml (telcopulse_medallion_orchestration, task eventhub_medallion)

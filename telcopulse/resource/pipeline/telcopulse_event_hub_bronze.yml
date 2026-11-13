@@ -34,5 +34,16 @@ resources:
         bronze_schema: ${var.bronze_schema}
         silver_schema: ${var.silver_schema}
         gold_schema: ${var.gold_schema}
+        # Deterministic partition/offset sample (dev=10, qa=30, prod=100)
+        data_sample_pct: "${var.data_sample_pct}"
+
+      # Pipeline-level alerts (also cover manual runs outside the orchestration job)
+      notifications:
+        - email_recipients:
+            - ${var.alert_email}
+          alerts:
+            - on-update-failure
+            - on-update-fatal-failure
+            - on-flow-failure
 
 # Schedule: see resource/job/telcopulse_job.yml (telcopulse_medallion_orchestration, task eventhub_medallion)

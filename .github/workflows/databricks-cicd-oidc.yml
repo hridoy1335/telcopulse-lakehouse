@@ -279,83 +279,83 @@ jobs:
   # 'prod' environment (vars + required reviewers).
   # ==========================================
 
-  # deploy_prod:
-  #
-  #   name: Deploy DAB to PROD
-  #
-  #   needs:
-  #     - validate
-  #     - deploy_qa
-  #
-  #   if: >-
-  #     ${{
-  #       github.ref == 'refs/heads/main' &&
-  #       github.event_name == 'workflow_dispatch' &&
-  #       inputs.deploy_through == 'prod'
-  #     }}
-  #
-  #   runs-on: ubuntu-latest
-  #
-  #   timeout-minutes: 30
-  #
-  #   # GitHub environment approval gate
-  #   environment: prod
-  #
-  #   permissions:
-  #     contents: read
-  #     id-token: write
-  #
-  #   defaults:
-  #     run:
-  #       working-directory: telcopulse
-  #
-  #   env:
-  #     AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-  #
-  #     DATABRICKS_AUTH_TYPE: github-oidc
-  #     DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
-  #     DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}
-  #
-  #     # run_as SP for the bundle (overrides the SP-name lookup in src/env/prod.yml)
-  #     BUNDLE_VAR_env_sp_application_id: ${{ vars.DATABRICKS_CLIENT_ID }}
-  #
-  #   steps:
-  #
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Azure Login using OIDC
-  #       uses: azure/login@v2
-  #       with:
-  #         client-id: ${{ vars.AZURE_CLIENT_ID }}
-  #         tenant-id: ${{ vars.AZURE_TENANT_ID }}
-  #         subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-  #
-  #     - name: Verify Azure identity and PROD access
-  #       shell: bash
-  #       run: |
-  #         set -euo pipefail
-  #
-  #         ACTUAL_SUBSCRIPTION=$(az account show --query id -o tsv)
-  #
-  #         if [[ "$ACTUAL_SUBSCRIPTION" != "$AZURE_SUBSCRIPTION_ID" ]]; then
-  #           echo "Azure subscription mismatch."
-  #           exit 1
-  #         fi
-  #
-  #         az group show \
-  #           --name spoke-telcopulse-prod \
-  #           --query '{name:name, location:location}' \
-  #           -o table
-  #
-  #     - name: Install Databricks CLI
-  #       uses: databricks/setup-cli@main
-  #
-  #     - name: Verify Databricks identity
-  #       run: databricks current-user me
-  #
-  #     - name: Validate PROD bundle
-  #       run: databricks bundle validate --target prod
-  #
-  #     - name: Deploy PROD bundle
-  #       run: databricks bundle deploy --target prod
+  deploy_prod:
+  
+    name: Deploy DAB to PROD
+  
+    needs:
+      - validate
+      - deploy_qa
+  
+    if: >-
+      ${{
+        github.ref == 'refs/heads/main' &&
+        github.event_name == 'workflow_dispatch' &&
+        inputs.deploy_through == 'prod'
+      }}
+  
+    runs-on: ubuntu-latest
+  
+    timeout-minutes: 30
+  
+    # GitHub environment approval gate
+    environment: prod
+  
+    permissions:
+      contents: read
+      id-token: write
+  
+    defaults:
+      run:
+        working-directory: telcopulse
+  
+    env:
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}
+  
+      # run_as SP for the bundle (overrides the SP-name lookup in src/env/prod.yml)
+      BUNDLE_VAR_env_sp_application_id: ${{ vars.DATABRICKS_CLIENT_ID }}
+  
+    steps:
+  
+      - name: Checkout repository
+        uses: actions/checkout@v4
+  
+      - name: Azure Login using OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  
+      - name: Verify Azure identity and PROD access
+        shell: bash
+        run: |
+          set -euo pipefail
+  
+          ACTUAL_SUBSCRIPTION=$(az account show --query id -o tsv)
+  
+          if [[ "$ACTUAL_SUBSCRIPTION" != "$AZURE_SUBSCRIPTION_ID" ]]; then
+            echo "Azure subscription mismatch."
+            exit 1
+          fi
+  
+          az group show \
+            --name spoke-telcopulse-prod \
+            --query '{name:name, location:location}' \
+            -o table
+  
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+  
+      - name: Verify Databricks identity
+        run: databricks current-user me
+  
+      - name: Validate PROD bundle
+        run: databricks bundle validate --target prod
+  
+      - name: Deploy PROD bundle
+        run: databricks bundle deploy --target prod

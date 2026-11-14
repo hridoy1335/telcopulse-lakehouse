@@ -53,4 +53,12 @@ targets:
         lookup:
           service_principal: app-telcopulse-github-prod
 
-    # Permissions block goes here (recommended: de_group CAN_VIEW, SP CAN_MANAGE)
+    # PROD: only the deploying SP manages resources; groups get read-only access.
+    # Changes reach prod through CI only (no manual edits).
+    permissions:
+      - service_principal_name: ${var.env_sp_application_id}
+        level: CAN_MANAGE
+      - group_name: de_group
+        level: CAN_VIEW
+      - group_name: da_group
+        level: CAN_VIEW

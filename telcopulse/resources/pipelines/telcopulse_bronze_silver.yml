@@ -17,7 +17,7 @@
 # =============================================================================
 resources:
   pipelines:
-    telcopulse_silver:
+    telcopulse_bronze_silver:
       name: telcopulse-silver-${bundle.target}
 
       # Environment-specific Unity Catalog

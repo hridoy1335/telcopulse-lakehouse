@@ -52,6 +52,9 @@ variables:
     description: Secret key in secret_scope holding the Event Hubs connection string
     default: eh-connection-string
 
+  silver_base_path:
+    description: Environment-specific Silver ADLS Gen2 path
+
   # --- Alerting ---
   alert_email:
     description: Email (user or distribution list) notified when orchestration jobs fail

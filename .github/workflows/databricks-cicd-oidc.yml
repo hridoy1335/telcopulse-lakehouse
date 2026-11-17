@@ -28,6 +28,13 @@ on:
           - qa
           - prod
         default: dev
+      approve_destructive:
+        description: >-
+          Approve destructive changes (pipeline delete/recreate) for DEV/QA/PROD.
+          Review the plan in a previous failed run before enabling.
+        required: false
+        type: boolean
+        default: false
 
 
 # Minimum permissions by default
@@ -182,7 +189,7 @@ jobs:
         run: databricks bundle validate --target dev
 
       - name: Deploy DEV bundle
-        run: databricks bundle deploy --target dev
+        run: databricks bundle deploy --target dev ${{ inputs.approve_destructive && '--auto-approve' || '' }}
 
 
   # ==========================================
@@ -267,7 +274,7 @@ jobs:
         run: databricks bundle validate --target qa
 
       - name: Deploy QA bundle
-        run: databricks bundle deploy --target qa
+        run: databricks bundle deploy --target qa ${{ inputs.approve_destructive && '--auto-approve' || '' }}
 
 
   # ==========================================
@@ -353,4 +360,4 @@ jobs:
         run: databricks bundle validate --target prod
   
       - name: Deploy PROD bundle
-        run: databricks bundle deploy --target prod
+        run: databricks bundle deploy --target prod ${{ inputs.approve_destructive && '--auto-approve' || '' }}

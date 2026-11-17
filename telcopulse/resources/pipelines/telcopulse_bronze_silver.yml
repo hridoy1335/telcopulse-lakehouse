@@ -43,5 +43,6 @@ resources:
         bronze_catalog: ${var.catalog_name}
         bronze_schema: ${var.bronze_schema}
 
+        silver_schema: ${var.silver_schema}
         # ADLS Gen2 Silver external storage location
         silver_base_path: ${var.silver_base_path}

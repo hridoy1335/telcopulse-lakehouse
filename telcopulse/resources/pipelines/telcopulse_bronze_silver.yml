@@ -2,7 +2,8 @@
 # Pipeline 3 - Bronze -> Silver
 #
 # PostgreSQL:
-#   8 Bronze tables -> Batch read -> DQ -> Silver Streaming Tables
+#   8 Bronze tables -> Batch read -> DQ -> Silver Materialized Views (same name as bronze)
+#   Metadata-driven: tables/keys/DQ rules in utilities/pg_silver_config.py
 #
 # Event Hubs:
 #   1 Bronze table -> Streaming read -> DQ -> Silver Streaming Table

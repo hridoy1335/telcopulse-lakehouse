@@ -63,5 +63,3 @@ targets:
         level: CAN_MANAGE
       - group_name: de_group
         level: CAN_VIEW
-      - group_name: da_group
-        level: CAN_VIEW

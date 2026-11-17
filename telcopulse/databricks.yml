@@ -8,6 +8,6 @@ include:
   # resource/catalogs and resource/schemas are intentionally NOT included
   # (including them fails deploy with CATALOG_ALREADY_EXISTS).
   # Re-add them only after `databricks bundle deployment bind`.
-  - resource/job/*.yml
-  - resource/pipeline/*.yml
+  - resources/jobs/*.yml
+  - resources/pipelines/*.yml
   - src/env/*.yml

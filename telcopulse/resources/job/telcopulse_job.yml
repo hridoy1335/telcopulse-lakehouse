@@ -28,7 +28,7 @@ resources:
           pipeline_task:
             pipeline_id: ${resources.pipelines.telcopulse_postgres_bronze.id}
             full_refresh: false
-        # indivisula event hub to bronze table not any dependency
+        # indivisual event hub to bronze table not any dependency
         - task_key: eventhub_bronze
           pipeline_task:
             pipeline_id: ${resources.pipelines.telcopulse_eventhub_bronze.id}

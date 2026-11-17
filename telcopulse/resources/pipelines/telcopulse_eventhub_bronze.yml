@@ -9,16 +9,16 @@
 # =============================================================================
 resources:
   pipelines:
-    telcopulse_eventhub_medallion:
-      name: telcopulse-eventhub-medallion-${bundle.target}
+    telcopulse_eventhub_bronze:
+      name: telcopulse-eventhub-bronze-${bundle.target}
 
       catalog: ${var.catalog_name}
       schema: ${var.bronze_schema}
 
-      root_path: ../../src/pipelines/eventhub_medallion
+      root_path: ../../src/pipelines/eventhub_bronze
       libraries:
         - glob:
-            include: ../../src/pipelines/eventhub_medallion/transformations/**
+            include: ../../src/pipelines/eventhub_bronze/transformations/**
 
       serverless: true
       photon: true

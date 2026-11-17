@@ -29,5 +29,3 @@ resources:
         pg_schema: ${var.pg_schema}
         bronze_schema: ${var.bronze_schema}
         data_sample_pct: "${var.data_sample_pct}"
-
-# Schedule: see resource/job/telcopulse_job.yml (telcopulse_medallion_orchestration, task postgres_bronze)

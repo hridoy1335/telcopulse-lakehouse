@@ -31,7 +31,10 @@ targets:
     variables:
       catalog_name: telcopulse-qa
       bronze_schema: bronze
+
       silver_schema: silver
+      silver_base_path: abfss://silver@telcopulseqa.dfs.core.windows.net/
+
       gold_schema: gold
 
       data_sample_pct: 30

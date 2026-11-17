@@ -1,0 +1,47 @@
+# =============================================================================
+# Pipeline 3 - Bronze -> Silver
+#
+# PostgreSQL:
+#   8 Bronze tables -> Batch read -> DQ -> Silver Streaming Tables
+#
+# Event Hubs:
+#   1 Bronze table -> Streaming read -> DQ -> Silver Streaming Table
+#
+# Both transformations run inside ONE Silver pipeline.
+#
+# Silver execution:
+#   Triggered mode (continuous=false)
+#
+# Sampling:
+#   Inherited from Bronze. No additional sampling in Silver.
+# =============================================================================
+resources:
+  pipelines:
+    telcopulse_silver:
+      name: telcopulse-silver-${bundle.target}
+
+      # Environment-specific Unity Catalog
+      catalog: ${var.catalog_name}
+      schema: ${var.silver_schema}
+
+      # Silver pipeline source directory
+      root_path: ../../src/pipelines/bronze_to_silver
+
+      # Both Python files belong to the same pipeline
+      libraries:
+        - glob:
+            include: ../../src/pipelines/bronze_to_silver/transformations/**
+
+      # Compute configuration
+      serverless: true
+      photon: true
+      channel: current
+      continuous: false
+
+      # Environment-specific pipeline configuration
+      configuration:
+        bronze_catalog: ${var.catalog_name}
+        bronze_schema: ${var.bronze_schema}
+
+        # ADLS Gen2 Silver external storage location
+        silver_base_path: ${var.silver_base_path}

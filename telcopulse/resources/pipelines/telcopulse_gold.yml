@@ -1,0 +1,48 @@
+# =============================================================================
+# Pipeline 4 - Silver -> Gold Star Schema
+#
+# Inputs:
+#   PostgreSQL Silver snapshots: subscribers, subscription_plans,
+#     device_registry, cell_sites, subscriptions, invoices, payments,
+#     support_tickets
+#   Event Hub Silver: slv_network_usages_eventhub
+#
+# Outputs in <catalog>.gold:
+#   Dimensions: dim_subscriber, dim_plan, dim_device, dim_cell_site, dim_date
+#   Facts: fact_subscription, fact_invoice, fact_payment,
+#     fact_support_ticket, fact_network_event
+#
+# All Gold transformations are defined in the Lakeflow pipeline.
+# SCD2 dimensions use AUTO CDC FROM SNAPSHOT over the full Silver snapshots.
+# =============================================================================
+resources:
+  pipelines:
+    telcopulse_gold:
+      name: telcopulse-gold-${bundle.target}
+
+      catalog: ${var.catalog_name}
+      schema: ${var.gold_schema}
+
+      root_path: ../../src/pipelines/silver_to_gold
+      libraries:
+        - glob:
+            include: ../../src/pipelines/silver_to_gold/transformations/**
+
+      # AUTO CDC FROM SNAPSHOT is supported on serverless Lakeflow pipelines.
+      serverless: true
+      photon: true
+      channel: current
+      continuous: false
+
+      configuration:
+        silver_catalog: ${var.catalog_name}
+        silver_schema: ${var.silver_schema}
+        gold_schema: ${var.gold_schema}
+
+      notifications:
+        - email_recipients:
+            - ${var.alert_email}
+          alerts:
+            - on-update-failure
+            - on-update-fatal-failure
+            - on-flow-failure

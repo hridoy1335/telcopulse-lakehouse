@@ -180,9 +180,15 @@ def fact_network_event():
     # Event time is used for historical dimension attribution. When an event
     # predates the first recorded dimension snapshot, the helper falls back to
     # the current dimension key and records a *_current_fallback flag.
-    return add_optional_dimension_lookups(
+    result_df = add_optional_dimension_lookups(
         df=df,
         lookup_names=EVENTHUB_FACT_CONFIG["dimension_lookups"],
         lookup_config=DIMENSION_LOOKUPS,
         as_of_column="event_timestamp",
+    )
+    # Liquid clustering needs stats on the clustering column, and Delta only
+    # collects stats for the first 32 columns. Keep event_date_key first.
+    return result_df.select(
+        "event_date_key",
+        *[c for c in result_df.columns if c != "event_date_key"],
     )

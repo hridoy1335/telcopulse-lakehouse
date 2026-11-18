@@ -43,6 +43,15 @@ resources:
 
           pipeline_task:
             pipeline_id: ${resources.pipelines.telcopulse_bronze_silver.id}
+        # it depend silver table successfull
+        - task_key: gold
+          depends_on:
+            - task_key: silver
+              
+          run_if: ALL_SUCCESS
+
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.telcopulse_gold.id}
       schedule:
         quartz_cron_expression: "0 0 4 * * ?"    # daily 04:00 Dhaka time (22:00 UTC)
         timezone_id: Asia/Dhaka
